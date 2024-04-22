@@ -48,4 +48,4 @@ async def main() -> None:
     await application.idle()
 
 if __name__ == '__main__':
-    main())
+    main()

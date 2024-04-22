@@ -30,14 +30,16 @@ def select(update: Update, context: CallbackContext) -> None:
     index = int(update.message.text) - 1
     risultati = context.user_data['risultati']
     scelto = risultati[index]
-    keyboard = [[InlineKeyboardButton("Copia Magnet", callback_data=scelto['magnet'])]]
+    context.user_data['magnet'] = scelto['magnet']
+    keyboard = [[InlineKeyboardButton("Copia Magnet", callback_data='copia_magnet')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text('Premi il pulsante per copiare il magnet:', reply_markup=reply_markup)
 
 def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
-    query.edit_message_text(f"Magnet copiato: {query.data}")
+    magnet = context.user_data['magnet']
+    query.edit_message_text(f"Magnet: {magnet}")
 
 def main() -> None:
     updater = Updater(token=TOKEN)

@@ -1,9 +1,10 @@
 import os
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, filters, CallbackContext
 import requests
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+PORT = int(os.environ.get('PORT', '8443'))
 
 async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text('Inserisci il titolo che vuoi cercare:')
@@ -38,7 +39,7 @@ async def main() -> None:
     updater = Updater(bot=bot)
 
     updater.dispatcher.add_handler(CommandHandler("start", start))
-    updater.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    updater.dispatcher.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
     updater.dispatcher.add_handler(CallbackQueryHandler(button))
 
     await updater.start_polling()

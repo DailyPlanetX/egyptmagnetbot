@@ -5,6 +5,7 @@ import libtorrent as lt
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InlineQueryResultArticle, InputTextMessageContent
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, Filters, InlineQueryHandler
 import requests
+import shutil
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 DOWNLOAD_DIR = "~/Downloads"  # replace with your download directory
@@ -46,7 +47,8 @@ def mostra_risultati(update: Update, context: CallbackContext) -> None:
     if fine < len(risultati):
         keyboard.append([InlineKeyboardButton("Avanti", callback_data='avanti')])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Ecco i risultati della tua ricerca:', reply_markup=reply_markup)
+    query = update.callback_query
+    query.edit_message_text('Ecco i risultati della tua ricerca:', reply_markup=reply_markup)
 
 def echo(update: Update, context: CallbackContext) -> None:
     titolo = update.message.text
@@ -96,14 +98,19 @@ def button(update: Update, context: CallbackContext) -> None:
 
 def send_download_status(bot, chat_id):
     while download_state["downloading"]:
-        progress = download_state.get('progress', 0)  # use get method to avoid KeyError
-        download_rate = download_state.get('download_rate', 0)  # use get method to avoid KeyError
-        total_done = download_state.get('total_done', 0)  # use get method to avoid KeyError
-        status_text = f"Progresso del download: {progress}%\nVelocità di download: {download_rate} bytes/s\nTotal scaricato: {total_done} bytes"
+        s = info.status()
+        progress = s.progress * 100
+        download_rate = s.download_rate / 1024  # convert to kb/s
+        total_done = s.total_done / (1024 * 1024)  # convert to mb
+        total = s.total_wanted / (1024 * 1024)  # convert to mb
+        file_name = info.name()
+        total, used, free = shutil.disk_usage("/")
+        free = free / (1024 * 1024 * 1024)  # convert to gb
+        status_text = f"File: {file_name}\nDimensione del file: {total} MB\nProgresso del download: {progress}%\nVelocità di download: {download_rate} kb/s\nTotal scaricato: {total_done} MB\nSpazio disponibile sul disco: {free} GB"
         if download_state["status_message"]:
             bot.delete_message(chat_id, download_state["status_message"].message_id)
         download_state["status_message"] = bot.send_message(chat_id, status_text)
-        time.sleep(5)
+        time.sleep(20)
 
 def inlinequery(update: Update, context: CallbackContext) -> None:
     query = update.inline_query.query

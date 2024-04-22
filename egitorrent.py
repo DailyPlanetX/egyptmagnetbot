@@ -33,6 +33,21 @@ def start_download(magnet, message):
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Inserisci il titolo che vuoi cercare:')
 
+def mostra_risultati(update: Update, context: CallbackContext) -> None:
+    risultati = context.user_data['risultati']
+    pagina = context.user_data['pagina']
+    inizio = pagina * 5
+    fine = inizio + 5
+    keyboard = []
+    for i in range(inizio, min(fine, len(risultati))):
+        keyboard.append([InlineKeyboardButton(risultati[i]['titolo'], callback_data=str(i))])
+    if pagina > 0:
+        keyboard.append([InlineKeyboardButton("Indietro", callback_data='indietro')])
+    if fine < len(risultati):
+        keyboard.append([InlineKeyboardButton("Avanti", callback_data='avanti')])
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text('Ecco i risultati della tua ricerca:', reply_markup=reply_markup)
+
 def echo(update: Update, context: CallbackContext) -> None:
     titolo = update.message.text
     tabelle = ["film", "anime", "serietv"]

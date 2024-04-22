@@ -19,31 +19,36 @@ def echo(update: Update, context: CallbackContext) -> None:
         for item in data['items']:
             risultati.append(item)
 
-    if risultati:
-        context.user_data['risultati'] = risultati
-        keyboard = [[InlineKeyboardButton(f"{i+1}. {item['titolo']}", callback_data=str(i))] for i, item in enumerate(risultati)]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text('Seleziona un risultato:', reply_markup=reply_markup)
-    else:
-        update.message.reply_text('Nessun risultato trovato.')
+    context.user_data['risultati'] = risultati
+    context.user_data['pagina'] = 0
+    mostra_risultati(update, context)
 
-def select(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    query.answer()
-    index = int(query.data)
-    risultati = context.user_data['risultati']
-    scelto = risultati[index]
-    context.user_data['magnet'] = scelto['magnet']
-    keyboard = [[InlineKeyboardButton("Copia Magnet", callback_data='copia_magnet')]]
+def mostra_risultati(update: Update, context: CallbackContext) -> None:
+    pagina = context.user_data['pagina']
+    risultati = context.user_data['risultati'][pagina*10:(pagina+1)*10]
+    keyboard = [[InlineKeyboardButton(f"{i+1}. {item['titolo']}", callback_data=str(i+pagina*10))] for i, item in enumerate(risultati)]
+    if pagina > 0:
+        keyboard.append([InlineKeyboardButton("Indietro", callback_data='indietro')])
+    if len(context.user_data['risultati']) > (pagina+1)*10:
+        keyboard.append([InlineKeyboardButton("Avanti", callback_data='avanti')])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    query.edit_message_text('Premi il pulsante per copiare il magnet:', reply_markup=reply_markup)
+    update.message.reply_text('Seleziona un risultato:', reply_markup=reply_markup)
 
 def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
-    if query.data == 'copia_magnet':
-        magnet = context.user_data['magnet']
-        query.edit_message_text(f"Magnet: {magnet}")
+    if query.data.isdigit():
+        index = int(query.data)
+        risultati = context.user_data['risultati']
+        scelto = risultati[index]
+        context.user_data['magnet'] = scelto['magnet']
+        query.edit_message_text(f"Magnet:\n```{scelto['magnet']}```", parse_mode='MarkdownV2')
+    elif query.data == 'indietro':
+        context.user_data['pagina'] -= 1
+        mostra_risultati(update, context)
+    elif query.data == 'avanti':
+        context.user_data['pagina'] += 1
+        mostra_risultati(update, context)
 
 def main() -> None:
     updater = Updater(token=TOKEN)
@@ -51,9 +56,8 @@ def main() -> None:
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command & ~Filters.regex(r'^\d+$'), echo))
-    dispatcher.add_handler(CallbackQueryHandler(select, pattern='^\d+$'))
-    dispatcher.add_handler(CallbackQueryHandler(button, pattern='^copia_magnet$'))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    dispatcher.add_handler(CallbackQueryHandler(button))
 
     updater.start_polling()
 

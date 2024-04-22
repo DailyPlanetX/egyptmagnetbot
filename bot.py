@@ -1,5 +1,5 @@
 import os
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InlineQueryResultArticle, InputTextMessageContent, InlineQueryHandler
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, Filters
 import requests
 
@@ -32,7 +32,8 @@ def mostra_risultati(update: Update, context: CallbackContext) -> None:
     if len(context.user_data['risultati']) > (pagina+1)*10:
         keyboard.append([InlineKeyboardButton("Avanti", callback_data='avanti')])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Seleziona un risultato:', reply_markup=reply_markup)
+    message = update.message if update.message else update.callback_query.message
+    message.reply_text('Seleziona un risultato:', reply_markup=reply_markup)
 
 def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
@@ -50,6 +51,27 @@ def button(update: Update, context: CallbackContext) -> None:
         context.user_data['pagina'] += 1
         mostra_risultati(update, context)
 
+def inlinequery(update: Update, context: CallbackContext) -> None:
+    query = update.inline_query.query
+    tabelle = ["film", "anime", "serietv"]
+    risultati = []
+    for tabella in tabelle:
+        url = f"https://ilsegretodellepiramidi.pythonanywhere.com/api?table={tabella}&page=1&filtro={query}"
+        response = requests.get(url)
+        data = response.json()
+        for item in data['items']:
+            risultati.append(item)
+
+    results = [
+        InlineQueryResultArticle(
+            id=str(i),
+            title=item['titolo'],
+            input_message_content=InputTextMessageContent(item['magnet'])
+        ) for i, item in enumerate(risultati)
+    ]
+
+    update.inline_query.answer(results)
+
 def main() -> None:
     updater = Updater(token=TOKEN)
 
@@ -58,6 +80,7 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
     dispatcher.add_handler(CallbackQueryHandler(button))
+    dispatcher.add_handler(InlineQueryHandler(inlinequery))
 
     updater.start_polling()
 

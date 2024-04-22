@@ -1,20 +1,20 @@
 import os
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 import requests
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
-def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Inserisci il titolo che vuoi cercare:')
+async def start(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text('Inserisci il titolo che vuoi cercare:')
 
-def echo(update: Update, context: CallbackContext) -> None:
+async def echo(update: Update, context: CallbackContext) -> None:
     titolo = update.message.text
     tabelle = ["film", "anime", "serietv"]
     risultati = []
     for tabella in tabelle:
         url = f"https://ilsegretodellepiramidi.pythonanywhere.com/api?table={tabella}&page=1&filtro={titolo}"
-        response = requests.get(url)
+        response = await requests.get(url)
         data = response.json()
         for item in data['items']:
             risultati.append(item)
@@ -22,30 +22,29 @@ def echo(update: Update, context: CallbackContext) -> None:
     if risultati:
         keyboard = [[InlineKeyboardButton(f"{i+1}. {item['titolo']}", callback_data=str(i)) for i, item in enumerate(risultati)]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text('Seleziona un risultato:', reply_markup=reply_markup)
+        await update.message.reply_text('Seleziona un risultato:', reply_markup=reply_markup)
     else:
-        update.message.reply_text('Nessun risultato trovato.')
+        await update.message.reply_text('Nessun risultato trovato.')
 
-def button(update: Update, context: CallbackContext) -> None:
+async def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
-    query.answer()
+    await query.answer()
     risultati = context.user_data['risultati']
     scelto = risultati[int(query.data)]
-    query.edit_message_text(text=f"Magnet: {scelto['magnet']}")
+    await query.edit_message_text(text=f"Magnet: {scelto['magnet']}")
 
-def main() -> None:
+async def main() -> None:
     bot = Bot(token=TOKEN)
-    updater = Updater(bot=bot)  # rimuovi use_context=True
+    app = Application(bot=bot)
 
-    dispatcher = updater.dispatcher
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+    app.add_handler(CallbackQueryHandler(button))
 
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(filters.text & ~filters.command, echo))
-    dispatcher.add_handler(CallbackQueryHandler(button))
+    await app.run_polling()
 
-    updater.start_polling()
-
-    updater.idle()
+    await app.idle()
 
 if __name__ == '__main__':
-    main()
+    import asyncio
+    asyncio.run(main())

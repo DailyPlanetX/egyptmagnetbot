@@ -1,8 +1,9 @@
+import os
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, Filters
 import requests
 
-TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Inserisci il titolo che vuoi cercare:')

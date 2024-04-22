@@ -1,9 +1,8 @@
-FROM python:3.11-slim-buster
+FROM python:3.11
 
 WORKDIR /app
+COPY . /app
 
-COPY . .
+RUN pip install python-telegram-bot==21.1.1 requests
 
-RUN pip install --no-cache-dir python-telegram-bot==21.1.1 requests
-
-CMD [ "python", "./bot.py" ]
+CMD ["python", "bot.py"]

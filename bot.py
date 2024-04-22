@@ -35,7 +35,7 @@ def button(update: Update, context: CallbackContext) -> None:
 
 def main() -> None:
     bot = Bot(token=TOKEN)
-    updater = Updater(bot=bot, use_context=True)
+    updater = Updater(bot=bot)  # rimuovi use_context=True
 
     dispatcher = updater.dispatcher
 

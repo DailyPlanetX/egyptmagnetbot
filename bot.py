@@ -1,5 +1,5 @@
 import os
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, filters, CallbackContext
 import requests
 
@@ -35,8 +35,7 @@ async def button(update: Update, context: CallbackContext) -> None:
     await query.edit_message_text(text=f"Magnet: {scelto['magnet']}")
 
 async def main() -> None:
-    bot = Bot(token=TOKEN)
-    updater = Updater(bot=bot)
+    updater = Updater(TOKEN)
 
     updater.dispatcher.add_handler(CommandHandler("start", start))
     updater.dispatcher.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))

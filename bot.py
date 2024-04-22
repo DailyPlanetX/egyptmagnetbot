@@ -21,25 +21,29 @@ def echo(update: Update, context: CallbackContext) -> None:
 
     if risultati:
         context.user_data['risultati'] = risultati
-        risultati_text = "\n".join([f"{i+1}. {item['titolo']}" for i, item in enumerate(risultati)])
-        update.message.reply_text(f'Seleziona un risultato:\n{risultati_text}')
+        keyboard = [[InlineKeyboardButton(f"{i+1}. {item['titolo']}", callback_data=str(i))] for i, item in enumerate(risultati)]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text('Seleziona un risultato:', reply_markup=reply_markup)
     else:
         update.message.reply_text('Nessun risultato trovato.')
 
 def select(update: Update, context: CallbackContext) -> None:
-    index = int(update.message.text) - 1
+    query = update.callback_query
+    query.answer()
+    index = int(query.data)
     risultati = context.user_data['risultati']
     scelto = risultati[index]
     context.user_data['magnet'] = scelto['magnet']
     keyboard = [[InlineKeyboardButton("Copia Magnet", callback_data='copia_magnet')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Premi il pulsante per copiare il magnet:', reply_markup=reply_markup)
+    query.edit_message_text('Premi il pulsante per copiare il magnet:', reply_markup=reply_markup)
 
 def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
-    magnet = context.user_data['magnet']
-    query.edit_message_text(f"Magnet: {magnet}")
+    if query.data == 'copia_magnet':
+        magnet = context.user_data['magnet']
+        query.edit_message_text(f"Magnet: {magnet}")
 
 def main() -> None:
     updater = Updater(token=TOKEN)
@@ -48,8 +52,8 @@ def main() -> None:
 
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command & ~Filters.regex(r'^\d+$'), echo))
-    dispatcher.add_handler(MessageHandler(Filters.regex(r'^\d+$'), select))
-    dispatcher.add_handler(CallbackQueryHandler(button))
+    dispatcher.add_handler(CallbackQueryHandler(select, pattern='^\d+$'))
+    dispatcher.add_handler(CallbackQueryHandler(button, pattern='^copia_magnet$'))
 
     updater.start_polling()
 

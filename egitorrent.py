@@ -55,9 +55,12 @@ def echo(update: Update, context: CallbackContext) -> None:
     for tabella in tabelle:
         url = f"https://ilsegretodellepiramidi.pythonanywhere.com/api?table={tabella}&page=1&filtro={titolo}"
         response = requests.get(url)
-        data = response.json()
-        for item in data['items']:
-            risultati.append(item)
+        if response.status_code == 200 and response.text.strip():  # check if response is valid
+            data = response.json()
+            for item in data['items']:
+                risultati.append(item)
+        else:
+            update.message.reply_text('Errore nel recupero dei dati. Riprova più tardi.')
 
     context.user_data['risultati'] = risultati
     context.user_data['pagina'] = 0
@@ -93,7 +96,10 @@ def button(update: Update, context: CallbackContext) -> None:
 
 def send_download_status(bot, chat_id):
     while download_state["downloading"]:
-        status_text = f"Progresso del download: {download_state['progress']}%\nVelocità di download: {download_state['download_rate']} bytes/s\nTotal scaricato: {download_state['total_done']} bytes"
+        progress = download_state.get('progress', 0)  # use get method to avoid KeyError
+        download_rate = download_state.get('download_rate', 0)  # use get method to avoid KeyError
+        total_done = download_state.get('total_done', 0)  # use get method to avoid KeyError
+        status_text = f"Progresso del download: {progress}%\nVelocità di download: {download_rate} bytes/s\nTotal scaricato: {total_done} bytes"
         if download_state["status_message"]:
             bot.delete_message(chat_id, download_state["status_message"].message_id)
         download_state["status_message"] = bot.send_message(chat_id, status_text)

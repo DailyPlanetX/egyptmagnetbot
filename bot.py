@@ -1,6 +1,6 @@
 import os
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
 import requests
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -35,15 +35,15 @@ async def button(update: Update, context: CallbackContext) -> None:
 
 async def main() -> None:
     bot = Bot(token=TOKEN)
-    app = Application(bot=bot)
+    updater = Updater(bot=bot)
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-    app.add_handler(CallbackQueryHandler(button))
+    updater.dispatcher.add_handler(CommandHandler("start", start))
+    updater.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    updater.dispatcher.add_handler(CallbackQueryHandler(button))
 
-    await app.run_polling()
+    await updater.start_polling()
 
-    await app.idle()
+    await updater.idle()
 
 if __name__ == '__main__':
     import asyncio

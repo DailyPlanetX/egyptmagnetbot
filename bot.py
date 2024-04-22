@@ -43,7 +43,7 @@ def button(update: Update, context: CallbackContext) -> None:
         risultati = context.user_data['risultati']
         scelto = risultati[index]
         context.user_data['magnet'] = scelto['magnet']
-        query.edit_message_text(f"Magnet:\n```{scelto['magnet']}```", parse_mode='MarkdownV2')
+        query.edit_message_text(f"Magnet:\n```\n{scelto['magnet']}\n```", parse_mode='MarkdownV2')
     elif query.data == 'indietro':
         context.user_data['pagina'] -= 1
         mostra_risultati(update, context)
@@ -66,7 +66,7 @@ def inlinequery(update: Update, context: CallbackContext) -> None:
         InlineQueryResultArticle(
             id=str(i),
             title=item['titolo'],
-            input_message_content=InputTextMessageContent(item['magnet'])
+            input_message_content=InputTextMessageContent(f"```\n{item['magnet']}\n```", parse_mode='MarkdownV2')
         ) for i, item in enumerate(risultati)
     ]
 

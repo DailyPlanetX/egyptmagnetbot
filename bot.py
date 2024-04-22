@@ -33,7 +33,7 @@ def mostra_risultati(update: Update, context: CallbackContext) -> None:
         keyboard.append([InlineKeyboardButton("Avanti", callback_data='avanti')])
     reply_markup = InlineKeyboardMarkup(keyboard)
     message = update.message if update.message else update.callback_query.message
-    message.reply_text('Seleziona un risultato:', reply_markup=reply_markup)
+    # message.reply_text('Seleziona un risultato:', reply_markup=reply_markup)
 
 def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query

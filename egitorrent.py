@@ -66,10 +66,30 @@ def login(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('File di sessione caricato con successo.')
 
 def carica(update: Update, context: CallbackContext) -> None:
-    if not download_state["downloading"]:
-        threading.Thread(target=send_file, args=(update.message.chat_id, "my_account.session")).start()
-    else:
-        update.message.reply_text('Un download è già in corso.')
+    download_dir = os.path.expanduser(DOWNLOAD_DIR)  # expand the user directory
+    files = os.listdir(download_dir)
+    if not files:
+        update.message.reply_text('Non ci sono file da caricare.')
+        return
+
+    for file in files:
+        update.message.reply_text(f'Vuoi caricare il file {file}? Rispondi con S o N.')
+        response = input()  # get user response
+        if response.lower() == 's':
+            file_path = os.path.join(download_dir, file)
+            if not os.path.exists(file_path):
+                update.message.reply_text(f'Il file {file} non esiste.')
+                continue
+            if file == 'my_account.session':
+                with TelegramClient("my_account", API_ID, API_HASH) as client:
+                    client.send_file(update.message.chat_id, file_path, progress_callback=progress)
+                    update.message.reply_text(f'File {file} caricato con successo.')
+            else:
+                update.message.reply_text(f'Il file {file} non è un file di sessione valido.')
+        elif response.lower() == 'n':
+            continue
+        else:
+            update.message.reply_text('Risposta non valida. Rispondi con S o N.')
 
 def handle_document(update: Update, context: CallbackContext) -> None:
     try:
@@ -208,6 +228,7 @@ def main() -> None:
 
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("login", login))
+    dispatcher.add_handler(CommandHandler("caricamento", carica))
     dispatcher.add_handler(MessageHandler(Filters.document & ~Filters.command, handle_document))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))  # handle text messages
     dispatcher.add_handler(CallbackQueryHandler(button))

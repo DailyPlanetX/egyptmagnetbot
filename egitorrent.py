@@ -38,7 +38,17 @@ def start_download(magnet, message):
     threading.Thread(target=send_file, args=(message.chat_id, info.name())).start()
 
 def login(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Carica il tuo file di sessione:')
+    document = update.message.document
+    if document:
+        file = context.bot.get_file(document.file_id)
+        file.download(custom_path="my_account.session")
+        update.message.reply_text('File di sessione caricato con successo.')
+
+def carica(update: Update, context: CallbackContext) -> None:
+    if not download_state["downloading"]:
+        threading.Thread(target=send_file, args=(update.message.chat_id, "my_account.session")).start()
+    else:
+        update.message.reply_text('Un download è già in corso.')
 
 def handle_document(update: Update, context: CallbackContext) -> None:
     try:

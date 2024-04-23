@@ -8,6 +8,14 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Callback
 from pyrogram import Client
 import requests
 from telegram import Document
+import logging
+
+# Configura il logging per scrivere i log sulla console e su un file
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[logging.StreamHandler(), logging.FileHandler("app.log")])
+
+# Ora puoi utilizzare logging.info(), logging.warning(), ecc. per scrivere i log
+logging.info("Inizio caricamento...")
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 API_ID = os.getenv("API_ID")

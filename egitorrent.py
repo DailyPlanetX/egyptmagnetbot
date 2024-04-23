@@ -83,13 +83,16 @@ def echo(update: Update, context: CallbackContext) -> None:
     risultati = []
     for tabella in tabelle:
         url = f"https://ilsegretodellepiramidi.pythonanywhere.com/api?table={tabella}&page=1&filtro={titolo}"
-        response = requests.get(url)
-        if response.status_code == 200 and response.text.strip():  # check if response is valid
-            data = response.json()
-            for item in data['items']:
-                risultati.append(item)
-        else:
-            update.message.reply_text('Errore nel recupero dei dati. Riprova più tardi.')
+        try:
+            response = requests.get(url)
+            if response.status_code == 200 and response.text.strip():  # check if response is valid
+                data = response.json()
+                for item in data['items']:
+                    risultati.append(item)
+            else:
+                update.message.reply_text('Errore nel recupero dei dati. Riprova più tardi.')
+        except requests.exceptions.RequestException as e:
+            update.message.reply_text(f"Si è verificato un errore di rete: {e}")
 
     context.user_data['risultati'] = risultati
     context.user_data['pagina'] = 0

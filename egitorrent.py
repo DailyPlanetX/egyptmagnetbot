@@ -47,8 +47,11 @@ def mostra_risultati(update: Update, context: CallbackContext) -> None:
     if fine < len(risultati):
         keyboard.append([InlineKeyboardButton("Avanti", callback_data='avanti')])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    query = update.callback_query
-    query.edit_message_text('Ecco i risultati della tua ricerca:', reply_markup=reply_markup)
+    if update.message:
+        update.message.reply_text('Ecco i risultati della tua ricerca:', reply_markup=reply_markup)
+    else:
+        query = update.callback_query
+        query.edit_message_text('Ecco i risultati della tua ricerca:', reply_markup=reply_markup)
 
 def echo(update: Update, context: CallbackContext) -> None:
     titolo = update.message.text

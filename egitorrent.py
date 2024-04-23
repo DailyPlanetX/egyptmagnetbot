@@ -41,17 +41,23 @@ def login(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Carica il tuo file di sessione:')
 
 def handle_document(update: Update, context: CallbackContext) -> None:
-    file = context.bot.getFile(update.message.document.file_id)
-    file.download('my_account.session')
-    update.message.reply_text('File di sessione caricato con successo!')
-    
+    try:
+        file = context.bot.getFile(update.message.document.file_id)
+        file.download('my_account.session')
+        update.message.reply_text('File di sessione caricato con successo!')
+    except Exception as e:
+        update.message.reply_text(f"Si è verificato un errore durante il caricamento del file di sessione: {e}")
+
 def send_file(chat_id, file_name):
-    file_path = os.path.join(DOWNLOAD_DIR, file_name)
-    new_loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(new_loop)
-    print("Caricamento in corso...")
-    with Client("my_account", api_id=API_ID, api_hash=API_HASH, session_name="./my_account") as app:
-        app.send_document(chat_id, file_path)
+    try:
+        file_path = os.path.join(DOWNLOAD_DIR, file_name)
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        print("Caricamento in corso...")
+        with Client("my_account", api_id=API_ID, api_hash=API_HASH, session_name="./my_account") as app:
+            app.send_document(chat_id, file_path)
+    except Exception as e:
+        print(f"Si è verificato un errore durante l'invio del file: {e}")
         
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Inserisci il titolo che vuoi cercare:')

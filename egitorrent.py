@@ -30,6 +30,7 @@ def start_download(magnet, message):
         time.sleep(1)
     download_state["downloading"] = False
     message.reply_text("Download completato!")
+    return info  # return info for use in other threads
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Inserisci il titolo che vuoi cercare:')
@@ -88,8 +89,8 @@ def button(update: Update, context: CallbackContext) -> None:
             download_state["downloading"] = True
             download_state["magnet"] = context.user_data['magnet']
             download_state["message"] = query.message
-            threading.Thread(target=start_download, args=(download_state["magnet"], download_state["message"])).start()
-            threading.Thread(target=send_download_status, args=(context.bot, query.message.chat_id)).start()
+            info = threading.Thread(target=start_download, args=(download_state["magnet"], download_state["message"])).start()  # capture the returned info
+            threading.Thread(target=send_download_status, args=(context.bot, query.message.chat_id, info)).start()  # pass info as an argument
         else:
             query.message.reply_text('Un download è già in corso.')
     elif query.data == 'indietro':
@@ -99,7 +100,7 @@ def button(update: Update, context: CallbackContext) -> None:
         context.user_data['pagina'] += 1
         mostra_risultati(update, context)
 
-def send_download_status(bot, chat_id):
+def send_download_status(bot, chat_id, info):  # add info as a parameter
     while download_state["downloading"]:
         s = info.status()
         progress = s.progress * 100

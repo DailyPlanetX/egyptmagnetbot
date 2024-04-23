@@ -7,6 +7,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InlineQ
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, Filters, InlineQueryHandler
 from pyrogram import Client
 import requests
+from telegram import Document
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 API_ID = os.getenv("API_ID")
@@ -36,12 +37,20 @@ def start_download(magnet, message):
     message.reply_text("Download completato!")
     threading.Thread(target=send_file, args=(message.chat_id, info.name())).start()
 
+def login(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Carica il tuo file di sessione:')
+
+def handle_document(update: Update, context: CallbackContext) -> None:
+    file = context.bot.getFile(update.message.document.file_id)
+    file.download('my_account.session')
+    update.message.reply_text('File di sessione caricato con successo!')
+    
 def send_file(chat_id, file_name):
     file_path = os.path.join(DOWNLOAD_DIR, file_name)
     new_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(new_loop)
     print("Caricamento in corso...")
-    with Client("my_account", api_id=API_ID, api_hash=API_HASH) as app:
+    with Client("my_account", api_id=API_ID, api_hash=API_HASH, session_name="./my_account") as app:
         app.send_document(chat_id, file_path)
         
 def start(update: Update, context: CallbackContext) -> None:
@@ -142,28 +151,6 @@ def inlinequery(update: Update, context: CallbackContext) -> None:
 
     update.inline_query.answer(results)
 
-def login(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Inserisci il tuo numero di telefono:')
-
-def phone_number(update: Update, context: CallbackContext) -> None:
-    phone_number = update.message.text
-    context.user_data['phone_number'] = phone_number
-    update.message.reply_text('Inserisci il codice di accesso che hai ricevuto da Telegram:')
-
-def access_code(update: Update, context: CallbackContext) -> None:
-    access_code = update.message.text
-    context.user_data['access_code'] = access_code
-    update.message.reply_text('Inserisci la tua password di Telegram:')
-
-def password(update: Update, context: CallbackContext) -> None:
-    password = update.message.text
-    phone_number = context.user_data['phone_number']
-    access_code = context.user_data['access_code']
-    with Client("my_account", api_id=API_ID, api_hash=API_HASH, phone_number=phone_number) as app:
-        app.send_code(phone_number)
-        app.sign_in(phone_number, access_code, password)
-    update.message.reply_text('Accesso effettuato con successo!')
-
 def main() -> None:
     updater = Updater(token=TOKEN)
 
@@ -171,9 +158,7 @@ def main() -> None:
 
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("login", login))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, phone_number, pass_user_data=True))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, access_code, pass_user_data=True))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, password, pass_user_data=True))
+    dispatcher.add_handler(MessageHandler(Filters.document & ~Filters.command, handle_document))
     dispatcher.add_handler(CallbackQueryHandler(button))
     dispatcher.add_handler(InlineQueryHandler(inlinequery))
 

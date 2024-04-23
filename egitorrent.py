@@ -58,14 +58,18 @@ def handle_document(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         update.message.reply_text(f"Si è verificato un errore durante il caricamento del file di sessione: {e}")
 
+def progress(current, total):
+    print(f"Caricato: {current * 100 / total:.1f}%")
+
 def send_file(chat_id, file_name):
     try:
         file_path = os.path.join(DOWNLOAD_DIR, file_name)
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
-        print("Caricamento in corso...")
+        print("Inizio caricamento...")
         with Client("my_account", api_id=API_ID, api_hash=API_HASH) as app:
-            app.send_document(chat_id, file_path)
+            message = app.send_document(chat_id, file_path, progress=progress)
+        print(f"File caricato con successo. ID del messaggio: {message.message_id}")
     except Exception as e:
         print(f"Si è verificato un errore durante l'invio del file: {e}")
         

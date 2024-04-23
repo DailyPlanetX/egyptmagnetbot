@@ -28,6 +28,7 @@ def start_download(magnet, message):
         download_state["total_done"] = s.total_done
         time.sleep(1)
     download_state["downloading"] = False
+    time.sleep(10)  # allow send_download_status to run a few more times
     message.reply_text("Download completato!")
 
 def start(update: Update, context: CallbackContext) -> None:
@@ -84,6 +85,7 @@ def button(update: Update, context: CallbackContext) -> None:
             download_state["magnet"] = context.user_data['magnet']
             download_state["message"] = query.message
             threading.Thread(target=start_download, args=(download_state["magnet"], download_state["message"])).start()
+            time.sleep(1)  # delay the start of send_download_status
             threading.Thread(target=send_download_status, args=(context.bot, query.message.chat_id)).start()
         else:
             query.message.reply_text('Un download è già in corso.')
@@ -95,14 +97,15 @@ def button(update: Update, context: CallbackContext) -> None:
         mostra_risultati(update, context)
 
 def send_download_status(bot, chat_id):
-    while download_state["downloading"]:
-        progress = download_state.get('progress', 0)  # use get method to avoid KeyError
-        download_rate = download_state.get('download_rate', 0) / 1024  # convert to KB/s
-        total_done = download_state.get('total_done', 0) / (1024 * 1024)  # convert to MB
-        status_text = f"Progresso del download: {progress}%\nVelocità di download: {download_rate:.2f} KB/s\nTotal scaricato: {total_done:.2f} MB"
-        if download_state["status_message"]:
-            bot.delete_message(chat_id, download_state["status_message"].message_id)
-        download_state["status_message"] = bot.send_message(chat_id, status_text)
+    for _ in range(20):  # run for a fixed number of times
+        if download_state["downloading"]:
+            progress = download_state.get('progress', 0)  # use get method to avoid KeyError
+            download_rate = download_state.get('download_rate', 0) / 1024  # convert to KB/s
+            total_done = download_state.get('total_done', 0) / (1024 * 1024)  # convert to MB
+            status_text = f"Progresso del download: {progress}%\nVelocità di download: {download_rate:.2f} KB/s\nTotal scaricato: {total_done:.2f} MB"
+            if download_state["status_message"]:
+                bot.delete_message(chat_id, download_state["status_message"].message_id)
+            download_state["status_message"] = bot.send_message(chat_id, status_text)
         time.sleep(5)
 
 def inlinequery(update: Update, context: CallbackContext) -> None:

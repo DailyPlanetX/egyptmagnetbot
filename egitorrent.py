@@ -97,8 +97,7 @@ def echo(update: Update, context: CallbackContext) -> None:
     context.user_data['risultati'] = risultati
     context.user_data['pagina'] = 0
     if risultati:
-        risultati_text = "\n".join([f"{i+1}. {risultato['titolo']}" for i, risultato in enumerate(risultati)])
-        update.message.reply_text(f"Ecco i risultati della tua ricerca:\n{risultati_text}")
+        mostra_risultati(update, context)  # call mostra_risultati directly
     else:
         update.message.reply_text("Nessun risultato trovato.")
 

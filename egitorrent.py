@@ -1,3 +1,4 @@
+import asyncio
 import os
 import threading
 import time
@@ -39,6 +40,7 @@ def send_file(chat_id, file_name):
     file_path = os.path.join(DOWNLOAD_DIR, file_name)
     new_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(new_loop)
+    print("Caricamento in corso...")
     with Client("my_account", api_id=API_ID, api_hash=API_HASH) as app:
         app.send_document(chat_id, file_path)
         

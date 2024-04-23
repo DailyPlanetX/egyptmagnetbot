@@ -10,6 +10,14 @@ import requests
 from telegram import Document
 import logging
 import sys
+from telethon.sync import TelegramClient
+from telethon.tl.types import InputPeerUser, InputPeerChannel
+from telethon.errors.rpcerrorlist import PeerFloodError, UserPrivacyRestrictedError
+from telethon.tl.functions.channels import GetParticipantsRequest
+from telethon.tl.types import ChannelParticipantsSearch
+from time import sleep
+import traceback
+import random
 
 # Configura il logging per scrivere i log sulla console e su un file
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -79,11 +87,11 @@ def send_file(chat_id, file_name):
         asyncio.set_event_loop(new_loop)
         print("Inizio caricamento...")
         start_time = time.time()
-        with Client("my_account", api_id=API_ID, api_hash=API_HASH) as app:
-            message = app.send_document(chat_id, file_path, progress=progress)
+        with TelegramClient("my_account", API_ID, API_HASH) as client:
+            client.send_file(chat_id, file_path, progress_callback=progress)
             time.sleep(1)  # Aggiungi una pausa di 1 secondo tra ogni iterazione
         end_time = time.time()
-        print(f"\nFile caricato con successo. ID del messaggio: {message.message_id}")
+        print(f"\nFile caricato con successo.")
         print(f"Tempo impiegato per il caricamento: {end_time - start_time} secondi")
     except TimeoutError:
         print("Il caricamento del file ha impiegato troppo tempo.")

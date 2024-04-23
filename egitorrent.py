@@ -5,7 +5,6 @@ import time
 import libtorrent as lt
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InlineQueryResultArticle, InputTextMessageContent
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, Filters, InlineQueryHandler
-from pyrogram import Client
 import requests
 from telegram import Document
 import logging
@@ -25,6 +24,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 
 # Ora puoi utilizzare logging.info(), logging.warning(), ecc. per scrivere i log
 logging.info("Inizio caricamento...")
+
+# La tua nuova funzione progress
+def progress(current, total):
+    logging.info("Caricato: {0:.1f}%".format(current * 100 / total))
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 API_ID = os.getenv("API_ID")
@@ -75,10 +78,6 @@ def handle_document(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('File di sessione caricato con successo!')
     except Exception as e:
         update.message.reply_text(f"Si è verificato un errore durante il caricamento del file di sessione: {e}")
-
-def progress(current, total):
-    sys.stdout.write("\rCaricato: {0:.1f}%".format(current * 100 / total))
-    sys.stdout.flush()
 
 def send_file(chat_id, file_name):
     try:

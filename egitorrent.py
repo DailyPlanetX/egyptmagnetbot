@@ -9,6 +9,7 @@ from pyrogram import Client
 import requests
 from telegram import Document
 import logging
+import sys
 
 # Configura il logging per scrivere i log sulla console e su un file
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -20,6 +21,7 @@ logging.info("Inizio caricamento...")
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
+CHAT = os.getenv("CHAT")
 DOWNLOAD_DIR = "~/Downloads"  # replace with your download directory
 
 # shared state for the download
@@ -67,7 +69,8 @@ def handle_document(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(f"Si è verificato un errore durante il caricamento del file di sessione: {e}")
 
 def progress(current, total):
-    print(f"Caricato: {current * 100 / total:.1f}%")
+    sys.stdout.write("\rCaricato: {0:.1f}%".format(current * 100 / total))
+    sys.stdout.flush()
 
 def send_file(chat_id, file_name):
     try:
@@ -79,7 +82,7 @@ def send_file(chat_id, file_name):
         with Client("my_account", api_id=API_ID, api_hash=API_HASH) as app:
             message = app.send_document(chat_id, file_path, progress=progress)
         end_time = time.time()
-        print(f"File caricato con successo. ID del messaggio: {message.message_id}")
+        print(f"\nFile caricato con successo. ID del messaggio: {message.message_id}")
         print(f"Tempo impiegato per il caricamento: {end_time - start_time} secondi")
     except TimeoutError:
         print("Il caricamento del file ha impiegato troppo tempo.")

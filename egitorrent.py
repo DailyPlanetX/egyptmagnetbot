@@ -81,6 +81,7 @@ def send_file(chat_id, file_name):
         start_time = time.time()
         with Client("my_account", api_id=API_ID, api_hash=API_HASH) as app:
             message = app.send_document(chat_id, file_path, progress=progress)
+            time.sleep(1)  # Aggiungi una pausa di 1 secondo tra ogni iterazione
         end_time = time.time()
         print(f"\nFile caricato con successo. ID del messaggio: {message.message_id}")
         print(f"Tempo impiegato per il caricamento: {end_time - start_time} secondi")

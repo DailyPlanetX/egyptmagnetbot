@@ -4,9 +4,12 @@ import time
 import libtorrent as lt
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InlineQueryResultArticle, InputTextMessageContent
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, Filters, InlineQueryHandler
+from pyrogram import Client
 import requests
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
 DOWNLOAD_DIR = "~/Downloads"  # replace with your download directory
 
 # shared state for the download
@@ -30,7 +33,13 @@ def start_download(magnet, message):
     download_state["downloading"] = False
     time.sleep(10)  # allow send_download_status to run a few more times
     message.reply_text("Download completato!")
+    threading.Thread(target=send_file, args=(message.chat_id, info.name())).start()
 
+def send_file(chat_id, file_name):
+    file_path = os.path.join(DOWNLOAD_DIR, file_name)
+    with Client("my_account", api_id=API_ID, api_hash=API_HASH) as app:
+        app.send_document(chat_id, file_path)
+        
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Inserisci il titolo che vuoi cercare:')
 

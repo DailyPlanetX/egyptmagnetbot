@@ -172,6 +172,7 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("login", login))
     dispatcher.add_handler(MessageHandler(Filters.document & ~Filters.command, handle_document))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))  # handle text messages
     dispatcher.add_handler(CallbackQueryHandler(button))
     dispatcher.add_handler(InlineQueryHandler(inlinequery))
 

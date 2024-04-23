@@ -5,7 +5,6 @@ import libtorrent as lt
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InlineQueryResultArticle, InputTextMessageContent
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, Filters, InlineQueryHandler
 import requests
-import shutil
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 DOWNLOAD_DIR = "~/Downloads"  # replace with your download directory
@@ -17,13 +16,11 @@ download_state = {
     "magnet": None,
     "message": None,
     "status_message": None,
-    "download_started": threading.Event(),  # add an Event for download started
 }
 
 def start_download(magnet, message):
     ses = lt.session()
     info = lt.add_magnet_uri(ses, magnet, {"save_path": DOWNLOAD_DIR})
-    download_state["download_started"].set()  # set the Event when download starts
     while not info.is_seed():
         s = info.status()
         download_state["progress"] = s.progress * 100
@@ -32,7 +29,6 @@ def start_download(magnet, message):
         time.sleep(1)
     download_state["downloading"] = False
     message.reply_text("Download completato!")
-    return info  # return info for use in other threads
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Inserisci il titolo che vuoi cercare:')
@@ -50,11 +46,7 @@ def mostra_risultati(update: Update, context: CallbackContext) -> None:
     if fine < len(risultati):
         keyboard.append([InlineKeyboardButton("Avanti", callback_data='avanti')])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    if update.message:
-        update.message.reply_text('Ecco i risultati della tua ricerca:', reply_markup=reply_markup)
-    else:
-        query = update.callback_query
-        query.edit_message_text('Ecco i risultati della tua ricerca:', reply_markup=reply_markup)
+    update.message.reply_text('Ecco i risultati della tua ricerca:', reply_markup=reply_markup)
 
 def echo(update: Update, context: CallbackContext) -> None:
     titolo = update.message.text
@@ -91,8 +83,8 @@ def button(update: Update, context: CallbackContext) -> None:
             download_state["downloading"] = True
             download_state["magnet"] = context.user_data['magnet']
             download_state["message"] = query.message
-            info = threading.Thread(target=start_download, args=(download_state["magnet"], download_state["message"])).start()  # capture the returned info
-            threading.Thread(target=send_download_status, args=(context.bot, query.message.chat_id, info)).start()  # pass info as an argument
+            threading.Thread(target=start_download, args=(download_state["magnet"], download_state["message"])).start()
+            threading.Thread(target=send_download_status, args=(context.bot, query.message.chat_id)).start()
         else:
             query.message.reply_text('Un download è già in corso.')
     elif query.data == 'indietro':
@@ -102,22 +94,16 @@ def button(update: Update, context: CallbackContext) -> None:
         context.user_data['pagina'] += 1
         mostra_risultati(update, context)
 
-def send_download_status(bot, chat_id, info):  # add info as a parameter
-    download_state["download_started"].wait()  # wait for the download to start
+def send_download_status(bot, chat_id):
     while download_state["downloading"]:
-        s = info.status()
-        progress = s.progress * 100
-        download_rate = s.download_rate / 1024  # convert to kb/s
-        total_done = s.total_done / (1024 * 1024)  # convert to mb
-        total = s.total_wanted / (1024 * 1024)  # convert to mb
-        file_name = info.name()
-        total, used, free = shutil.disk_usage("/")
-        free = free / (1024 * 1024 * 1024)  # convert to gb
-        status_text = f"File: {file_name}\nDimensione del file: {total} MB\nProgresso del download: {progress}%\nVelocità di download: {download_rate} kb/s\nTotal scaricato: {total_done} MB\nSpazio disponibile sul disco: {free} GB"
+        progress = download_state.get('progress', 0)  # use get method to avoid KeyError
+        download_rate = download_state.get('download_rate', 0) / 1024  # convert to KB/s
+        total_done = download_state.get('total_done', 0) / (1024 * 1024)  # convert to MB
+        status_text = f"Progresso del download: {progress}%\nVelocità di download: {download_rate:.2f} KB/s\nTotal scaricato: {total_done:.2f} MB"
         if download_state["status_message"]:
             bot.delete_message(chat_id, download_state["status_message"].message_id)
         download_state["status_message"] = bot.send_message(chat_id, status_text)
-        time.sleep(20)
+        time.sleep(5)
 
 def inlinequery(update: Update, context: CallbackContext) -> None:
     query = update.inline_query.query

@@ -68,8 +68,17 @@ def send_file(chat_id, file_name):
         asyncio.set_event_loop(new_loop)
         print("Inizio caricamento...")
         with Client("my_account", api_id=API_ID, api_hash=API_HASH) as app:
-            message = app.send_document(chat_id, file_path, progress=progress)
-        print(f"File caricato con successo. ID del messaggio: {message.message_id}")
+            start_time = time.time()
+            while True:
+                try:
+                    message = app.send_document(chat_id, file_path, progress=progress, timeout=10)
+                    print(f"File caricato con successo. ID del messaggio: {message.message_id}")
+                    break
+                except TimeoutError:
+                    print("Timeout durante il caricamento del file. Riprovo...")
+                    if time.time() - start_time > 60:  # stop retrying after 60 seconds
+                        print("Caricamento del file fallito dopo diversi tentativi. Interrompo.")
+                        break
     except Exception as e:
         print(f"Si è verificato un errore durante l'invio del file: {e}")
         

@@ -17,11 +17,13 @@ download_state = {
     "magnet": None,
     "message": None,
     "status_message": None,
+    "download_started": threading.Event(),  # add an Event for download started
 }
 
 def start_download(magnet, message):
     ses = lt.session()
     info = lt.add_magnet_uri(ses, magnet, {"save_path": DOWNLOAD_DIR})
+    download_state["download_started"].set()  # set the Event when download starts
     while not info.is_seed():
         s = info.status()
         download_state["progress"] = s.progress * 100
@@ -101,6 +103,7 @@ def button(update: Update, context: CallbackContext) -> None:
         mostra_risultati(update, context)
 
 def send_download_status(bot, chat_id, info):  # add info as a parameter
+    download_state["download_started"].wait()  # wait for the download to start
     while download_state["downloading"]:
         s = info.status()
         progress = s.progress * 100

@@ -64,7 +64,7 @@ def send_file(chat_id, file_name):
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
         print("Caricamento in corso...")
-        with Client("my_account", api_id=API_ID, api_hash=API_HASH, session_name="my_account") as app:
+        with Client("my_account", api_id=API_ID, api_hash=API_HASH) as app:
             app.send_document(chat_id, file_path)
     except Exception as e:
         print(f"Si è verificato un errore durante l'invio del file: {e}")

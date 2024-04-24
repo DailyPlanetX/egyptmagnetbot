@@ -71,14 +71,9 @@ def carica(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('La directory di download non esiste.')
         return
 
-    # Verifica se il file my_account.session esiste
-    if 'my_account.session' not in os.listdir(download_dir):
-        update.message.reply_text('Il file my_account.session non esiste. Inoltra o carica il file.')
-        return
-
-    files = [f for f in os.listdir(download_dir) if f.endswith('.session')]  # only consider .session files
+    files = [f for f in os.listdir(download_dir) if f.endswith('.session') and f != 'my_account.session']  # ignore my_account.session
     if not files:
-        update.message.reply_text('Non ci sono file di sessione da caricare.')
+        update.message.reply_text('Non ci sono altri file di sessione da caricare.')
         return
 
     for file in files:
@@ -124,7 +119,8 @@ def button(update: Update, context: CallbackContext) -> None:
             if not os.path.exists(file_path):
                 query.edit_message_text(f'Il file {file} non esiste.')
                 return
-            if file == 'my_account.session':
+            if file.endswith('.session'):
+                asyncio.set_event_loop(asyncio.new_event_loop())
                 with TelegramClient("my_account", API_ID, API_HASH) as client:
                     client.send_file(update.message.chat_id, file_path, progress_callback=progress)
                     query.edit_message_text(f'File {file} caricato con successo.')

@@ -225,22 +225,5 @@ def main() -> None:
 
     updater.idle()
 
-def main() -> None:
-    updater = Updater(token=TOKEN)
-
-    dispatcher = updater.dispatcher
-
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("login", login))
-    dispatcher.add_handler(CommandHandler("caricamento", carica))
-    dispatcher.add_handler(MessageHandler(Filters.document & ~Filters.command, handle_document))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))  # handle text messages
-    dispatcher.add_handler(CallbackQueryHandler(button))
-    dispatcher.add_handler(InlineQueryHandler(inlinequery))
-
-    updater.start_polling()
-
-    updater.idle()
-
 if __name__ == '__main__':
     main()

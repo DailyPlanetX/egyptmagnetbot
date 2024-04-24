@@ -77,23 +77,56 @@ def carica(update: Update, context: CallbackContext) -> None:
         return
 
     for file in files:
-        update.message.reply_text(f'Vuoi caricare il file {file}? Rispondi con S o N.')
-        response = input()  # get user response
-        if response.lower() == 's':
-            file_path = os.path.join(download_dir, file)
+        context.user_data['current_file'] = file  # store the current file in user_data
+        keyboard = [[InlineKeyboardButton("S", callback_data='s'), InlineKeyboardButton("N", callback_data='n')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text(f'Vuoi caricare il file {file}?', reply_markup=reply_markup)
+        return  # stop processing more files
+
+def button(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    query.answer()
+
+    if query.data.isdigit():
+        index = int(query.data)
+        risultati = context.user_data['risultati']
+        scelto = risultati[index]
+        context.user_data['magnet'] = scelto['magnet']
+        query.edit_message_text(f"Magnet:\n```\n{scelto['magnet']}\n```", parse_mode='MarkdownV2')
+        keyboard = [[InlineKeyboardButton("Scarica Magnet", callback_data='download')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        query.message.reply_text('Vuoi scaricare il file?', reply_markup=reply_markup)
+    elif query.data == 'download':
+        if not download_state["downloading"]:
+            download_state["downloading"] = True
+            download_state["magnet"] = context.user_data['magnet']
+            download_state["message"] = query.message
+            threading.Thread(target=start_download, args=(download_state["magnet"], download_state["message"])).start()
+            time.sleep(1)  # delay the start of send_download_status
+            threading.Thread(target=send_download_status, args=(context.bot, query.message.chat_id)).start()
+        else:
+            query.message.reply_text('Un download è già in corso.')
+    elif query.data == 'indietro':
+        context.user_data['pagina'] -= 1
+        mostra_risultati(update, context)
+    elif query.data == 'avanti':
+        context.user_data['pagina'] += 1
+        mostra_risultati(update, context)
+    elif query.data == 's' or query.data == 'n':
+        file = context.user_data['current_file']
+        if query.data == 's':
+            file_path = os.path.join(DOWNLOAD_DIR, file)
             if not os.path.exists(file_path):
-                update.message.reply_text(f'Il file {file} non esiste.')
-                continue
+                query.edit_message_text(f'Il file {file} non esiste.')
+                return
             if file == 'my_account.session':
                 with TelegramClient("my_account", API_ID, API_HASH) as client:
                     client.send_file(update.message.chat_id, file_path, progress_callback=progress)
-                    update.message.reply_text(f'File {file} caricato con successo.')
+                    query.edit_message_text(f'File {file} caricato con successo.')
             else:
-                update.message.reply_text(f'Il file {file} non è un file di sessione valido.')
-        elif response.lower() == 'n':
-            continue
-        else:
-            update.message.reply_text('Risposta non valida. Rispondi con S o N.')
+                query.edit_message_text(f'Il file {file} non è un file di sessione valido.')
+        elif query.data == 'n':
+            query.edit_message_text('File non caricato.')
             
 def handle_document(update: Update, context: CallbackContext) -> None:
     try:
@@ -162,35 +195,6 @@ def echo(update: Update, context: CallbackContext) -> None:
         mostra_risultati(update, context)  # call mostra_risultati directly
     else:
         update.message.reply_text("Nessun risultato trovato.")
-
-def button(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    query.answer()
-    if query.data.isdigit():
-        index = int(query.data)
-        risultati = context.user_data['risultati']
-        scelto = risultati[index]
-        context.user_data['magnet'] = scelto['magnet']
-        query.edit_message_text(f"Magnet:\n```\n{scelto['magnet']}\n```", parse_mode='MarkdownV2')
-        keyboard = [[InlineKeyboardButton("Scarica Magnet", callback_data='download')]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        query.message.reply_text('Vuoi scaricare il file?', reply_markup=reply_markup)
-    elif query.data == 'download':
-        if not download_state["downloading"]:
-            download_state["downloading"] = True
-            download_state["magnet"] = context.user_data['magnet']
-            download_state["message"] = query.message
-            threading.Thread(target=start_download, args=(download_state["magnet"], download_state["message"])).start()
-            time.sleep(1)  # delay the start of send_download_status
-            threading.Thread(target=send_download_status, args=(context.bot, query.message.chat_id)).start()
-        else:
-            query.message.reply_text('Un download è già in corso.')
-    elif query.data == 'indietro':
-        context.user_data['pagina'] -= 1
-        mostra_risultati(update, context)
-    elif query.data == 'avanti':
-        context.user_data['pagina'] += 1
-        mostra_risultati(update, context)
 
 def send_download_status(bot, chat_id):
     for _ in range(20):  # run for a fixed number of times

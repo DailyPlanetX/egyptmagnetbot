@@ -136,7 +136,7 @@ def button(update: Update, context: CallbackContext) -> None:
 def handle_document(update: Update, context: CallbackContext) -> None:
     try:
         file = context.bot.getFile(update.message.document.file_id)
-        file.download('my_account.session')
+        file.download(os.path.join(DOWNLOAD_DIR, 'my_account.session'))  # download the file to the correct directory
         update.message.reply_text('File di sessione caricato con successo!')
         # Una volta che il file è stato caricato con successo, chiamiamo la funzione carica
         carica(update, context)

@@ -76,16 +76,16 @@ def carica(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('Il file my_account.session non esiste. Inoltra o carica il file.')
         return
 
-    files = os.listdir(download_dir)
+    files = [f for f in os.listdir(download_dir) if f.endswith('.session')]  # only consider .session files
     if not files:
-        update.message.reply_text('Non ci sono file da caricare.')
+        update.message.reply_text('Non ci sono file di sessione da caricare.')
         return
 
     for file in files:
         context.user_data['current_file'] = file  # store the current file in user_data
         keyboard = [[InlineKeyboardButton("S", callback_data='s'), InlineKeyboardButton("N", callback_data='n')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text(f'Vuoi caricare il file {file}?', reply_markup=reply_markup)
+        update.message.reply_text(f'Vuoi caricare il file di sessione {file}?', reply_markup=reply_markup)
         return  # stop processing more files
 
 def button(update: Update, context: CallbackContext) -> None:

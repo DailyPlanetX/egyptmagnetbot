@@ -17,6 +17,7 @@ from telethon.tl.types import ChannelParticipantsSearch
 from time import sleep
 import traceback
 import random
+from io import StringIO
 
 # Configura il logging per scrivere i log sulla console e su un file
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -97,7 +98,7 @@ def button(update: Update, context: CallbackContext) -> None:
             query.edit_message_text(f'Il file {file} non esiste.')
             return
         asyncio.set_event_loop(asyncio.new_event_loop())
-        with TelegramClient(StringIO('my_account'), API_ID, API_HASH) as client:
+        with TelegramClient('my_account', API_ID, API_HASH) as client:
             client.send_file(CHAT, file_path, progress_callback=progress)
             query.edit_message_text(f'File {file} caricato con successo.')
     elif query.data.isdigit():

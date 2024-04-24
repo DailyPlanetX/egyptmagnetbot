@@ -66,28 +66,41 @@ def login(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('File di sessione caricato con successo.')
 
 def carica(update: Update, context: CallbackContext) -> None:
-    download_dir = os.path.expanduser(DOWNLOAD_DIR)  # expand the user directory
+    session_file = 'my_account.session'
+    if not os.path.exists(session_file):
+        update.message.reply_text('Il file di sessione non esiste. Per favore, caricalo.')
+        return
+
+    download_dir = '/root/Downloads'  # Docker download directory
     if not os.path.exists(download_dir):
         update.message.reply_text('La directory di download non esiste.')
         return
 
-    files = [f for f in os.listdir(download_dir) if f.endswith('.session') and f != 'my_account.session']  # ignore my_account.session
+    files = os.listdir(download_dir)  # consider all files
     if not files:
-        update.message.reply_text('Non ci sono altri file di sessione da caricare.')
+        update.message.reply_text('Non ci sono file da caricare.')
         return
 
-    for file in files:
-        context.user_data['current_file'] = file  # store the current file in user_data
-        keyboard = [[InlineKeyboardButton("S", callback_data='s'), InlineKeyboardButton("N", callback_data='n')]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text(f'Vuoi caricare il file di sessione {file}?', reply_markup=reply_markup)
-        return  # stop processing more files
+    context.user_data['files'] = files  # store all files in user_data
+    keyboard = [[InlineKeyboardButton(f, callback_data=f)] for f in files]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text('Quale file vuoi caricare?', reply_markup=reply_markup)
 
 def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
 
-    if query.data.isdigit():
+    if query.data in context.user_data['files']:
+        file = query.data
+        file_path = os.path.join('/root/Downloads', file)
+        if not os.path.exists(file_path):
+            query.edit_message_text(f'Il file {file} non esiste.')
+            return
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        with TelegramClient(StringIO('my_account'), API_ID, API_HASH) as client:
+            client.send_file(CHAT, file_path, progress_callback=progress)
+            query.edit_message_text(f'File {file} caricato con successo.')
+    elif query.data.isdigit():
         index = int(query.data)
         risultati = context.user_data['risultati']
         scelto = risultati[index]

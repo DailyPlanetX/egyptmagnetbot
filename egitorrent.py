@@ -94,7 +94,7 @@ def carica(update: Update, context: CallbackContext) -> None:
             continue
         else:
             update.message.reply_text('Risposta non valida. Rispondi con S o N.')
-
+            
 def handle_document(update: Update, context: CallbackContext) -> None:
     try:
         file = context.bot.getFile(update.message.document.file_id)
@@ -138,7 +138,7 @@ def mostra_risultati(update: Update, context: CallbackContext) -> None:
         keyboard.append([InlineKeyboardButton("Avanti", callback_data='avanti')])
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text('Ecco i risultati della tua ricerca:', reply_markup=reply_markup)
-
+    
 def echo(update: Update, context: CallbackContext) -> None:
     titolo = update.message.text
     tabelle = ["film", "anime", "serietv"]
@@ -204,26 +204,22 @@ def send_download_status(bot, chat_id):
             download_state["status_message"] = bot.send_message(chat_id, status_text)
         time.sleep(5)
 
-def inlinequery(update: Update, context: CallbackContext) -> None:
-    query = update.inline_query.query
-    tabelle = ["film", "anime", "serietv"]
-    risultati = []
-    for tabella in tabelle:
-        url = f"https://ilsegretodellepiramidi.pythonanywhere.com/api?table={tabella}&page=1&filtro={query}"
-        response = requests.get(url)
-        data = response.json()
-        for item in data['items']:
-            risultati.append(item)
+def main() -> None:
+    updater = Updater(token=TOKEN)
 
-    results = [
-        InlineQueryResultArticle(
-            id=str(i),
-            title=item['titolo'],
-            input_message_content=InputTextMessageContent(item['magnet'])
-        ) for i, item in enumerate(risultati)
-    ]
+    dispatcher = updater.dispatcher
 
-    update.inline_query.answer(results)
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("login", login))
+    dispatcher.add_handler(CommandHandler("caricamento", carica))
+    dispatcher.add_handler(MessageHandler(Filters.document & ~Filters.command, handle_document))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))  # handle text messages
+    dispatcher.add_handler(CallbackQueryHandler(button))
+    dispatcher.add_handler(InlineQueryHandler(inlinequery))
+
+    updater.start_polling()
+
+    updater.idle()
 
 def main() -> None:
     updater = Updater(token=TOKEN)

@@ -33,7 +33,7 @@ TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 CHAT = os.getenv("CHAT")
-DOWNLOAD_DIR = "~/Downloads"  # replace with your download directory
+DOWNLOAD_DIR = "/root/Downloads"  # replace with your download directory
 
 # shared state for the download
 download_state = {
@@ -67,6 +67,10 @@ def login(update: Update, context: CallbackContext) -> None:
 
 def carica(update: Update, context: CallbackContext) -> None:
     download_dir = os.path.expanduser(DOWNLOAD_DIR)  # expand the user directory
+    if not os.path.exists(download_dir):
+        update.message.reply_text('La directory di download non esiste.')
+        return
+
     files = os.listdir(download_dir)
     if not files:
         update.message.reply_text('Non ci sono file da caricare.')

@@ -71,6 +71,11 @@ def carica(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('La directory di download non esiste.')
         return
 
+    # Verifica se il file my_account.session esiste
+    if 'my_account.session' not in os.listdir(download_dir):
+        update.message.reply_text('Il file my_account.session non esiste. Inoltra o carica il file.')
+        return
+
     files = os.listdir(download_dir)
     if not files:
         update.message.reply_text('Non ci sono file da caricare.')
@@ -133,6 +138,8 @@ def handle_document(update: Update, context: CallbackContext) -> None:
         file = context.bot.getFile(update.message.document.file_id)
         file.download('my_account.session')
         update.message.reply_text('File di sessione caricato con successo!')
+        # Una volta che il file è stato caricato con successo, chiamiamo la funzione carica
+        carica(update, context)
     except Exception as e:
         update.message.reply_text(f"Si è verificato un errore durante il caricamento del file di sessione: {e}")
 

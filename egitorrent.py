@@ -90,7 +90,7 @@ def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
 
-    if query.data in context.user_data['files']:
+    if 'files' in context.user_data and query.data in context.user_data['files']:
         file = query.data
         file_path = os.path.join('/root/Downloads', file)
         if not os.path.exists(file_path):
@@ -132,8 +132,7 @@ def button(update: Update, context: CallbackContext) -> None:
             if not os.path.exists(file_path):
                 query.edit_message_text(f'Il file {file} non esiste.')
                 return
-            if file.endswith('.session'):
-                asyncio.set_event_loop(asyncio.new_event_loop())
+            if file == 'my_account.session':
                 with TelegramClient("my_account", API_ID, API_HASH) as client:
                     client.send_file(update.message.chat_id, file_path, progress_callback=progress)
                     query.edit_message_text(f'File {file} caricato con successo.')
